@@ -1,0 +1,14 @@
+# Chrome extension build artifacts
+*.crx
+*.pem
+.DS_Store
+
+# Logs
+*.log
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+

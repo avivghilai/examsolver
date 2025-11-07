@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Quiz Solver",
+  "version": "1.0.0",
+  "description": "Detects quiz questions and helps find correct answers using AI",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.docebosaas.com/*",
+    "https://api.openai.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.docebosaas.com/*",
+        "*://*/*quiz*",
+        "*://*/*question*"
+      ],
+      "js": [
+        "scripts/question-detector.js",
+        "scripts/openai-service.js",
+        "scripts/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Quiz Solver"
+  },
+  "options_page": "settings.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+
