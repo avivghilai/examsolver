@@ -6,16 +6,18 @@
 class OpenAIService {
     constructor() {
         this.apiKey = null;
-        this.model = 'gpt-4o'; // Using GPT-4o (latest model, user said ChatGPT 5 but this is the latest)
+        this.model = 'gpt-4o'; // Default to GPT-4o
     }
 
     /**
-     * Initialize the service by loading API key from storage
+     * Initialize the service by loading API key and model from storage
      */
     async initialize() {
         return new Promise((resolve) => {
-            chrome.storage.sync.get(['openaiApiKey'], (result) => {
+            chrome.storage.sync.get(['openaiApiKey', 'openaiModel'], (result) => {
                 this.apiKey = result.openaiApiKey || null;
+                // Default to gpt-4o if not set
+                this.model = result.openaiModel || 'gpt-4o';
                 resolve(!!this.apiKey);
             });
         });
@@ -41,28 +43,39 @@ class OpenAIService {
         const prompt = this.formatQuestionForOpenAI(question);
         
         try {
+            // GPT-5 uses max_completion_tokens instead of max_tokens and doesn't support custom temperature
+            const isGPT5 = this.model === 'gpt-5';
+            const requestBody = {
+                model: this.model,
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a helpful assistant that answers quiz questions accurately. Analyze the question and determine which answer(s) are correct. Provide your response in JSON format with "correctAnswers" (array of letter indices like ["A", "B"]) and "explanation" (brief explanation).'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                response_format: { type: "json_object" }
+            };
+            
+            // Use the correct parameters based on model
+            if (isGPT5) {
+                requestBody.max_completion_tokens = 500;
+                // GPT-5 doesn't support custom temperature, only default (1)
+            } else {
+                requestBody.max_tokens = 500;
+                requestBody.temperature = 0.3;
+            }
+            
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${this.apiKey}`
                 },
-                body: JSON.stringify({
-                    model: this.model,
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'You are a helpful assistant that answers quiz questions accurately. Analyze the question and determine which answer(s) are correct. Provide your response in JSON format with "correctAnswers" (array of letter indices like ["A", "B"]) and "explanation" (brief explanation).'
-                        },
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 500,
-                    response_format: { type: "json_object" }
-                })
+                body: JSON.stringify(requestBody)
             });
             
             if (!response.ok) {

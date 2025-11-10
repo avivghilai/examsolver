@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsForm = document.getElementById('settingsForm');
     const openaiApiKeyInput = document.getElementById('openaiApiKey');
     const geminiApiKeyInput = document.getElementById('geminiApiKey');
+    const openaiModelSelect = document.getElementById('openaiModel');
+    const geminiModelSelect = document.getElementById('geminiModel');
+    const openaiModelDisplay = document.getElementById('openaiModelDisplay');
+    const geminiModelDisplay = document.getElementById('geminiModelDisplay');
     const toggleOpenAIPassword = document.getElementById('toggleOpenAIPassword');
     const toggleGeminiPassword = document.getElementById('toggleGeminiPassword');
     const providerOpenAI = document.getElementById('providerOpenAI');
@@ -42,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsPanel.classList.add('active');
         
         // Load current settings
-        chrome.storage.sync.get(['aiProvider', 'openaiApiKey', 'geminiApiKey', 'debugLogging'], (result) => {
+        chrome.storage.sync.get(['aiProvider', 'openaiApiKey', 'geminiApiKey', 'openaiModel', 'geminiModel', 'debugLogging'], (result) => {
             const provider = result.aiProvider || 'openai';
             updateProviderUI(provider);
             
@@ -52,8 +56,39 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.geminiApiKey) {
                 geminiApiKeyInput.value = result.geminiApiKey;
             }
+            if (result.openaiModel) {
+                openaiModelSelect.value = result.openaiModel;
+            }
+            if (result.geminiModel) {
+                geminiModelSelect.value = result.geminiModel;
+            }
             debugLoggingToggle.checked = result.debugLogging === true;
+            
+            // Update model display text
+            updateModelDisplay();
         });
+    }
+    
+    function updateModelDisplay() {
+        // Update OpenAI model display
+        const openaiModel = openaiModelSelect.value;
+        if (openaiModel === 'gpt-4o') {
+            openaiModelDisplay.textContent = 'GPT-4o';
+        } else if (openaiModel === 'gpt-5') {
+            openaiModelDisplay.textContent = 'ChatGPT 5';
+        } else {
+            openaiModelDisplay.textContent = openaiModel;
+        }
+        
+        // Update Gemini model display
+        const geminiModel = geminiModelSelect.value;
+        if (geminiModel === 'gemini-2.5-flash') {
+            geminiModelDisplay.textContent = '2.5 Flash';
+        } else if (geminiModel === 'gemini-2.5-pro') {
+            geminiModelDisplay.textContent = '2.5 Pro';
+        } else {
+            geminiModelDisplay.textContent = geminiModel;
+        }
     }
     
     function updateProviderUI(provider) {
@@ -103,6 +138,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Update model display when model selection changes
+    openaiModelSelect.addEventListener('change', () => {
+        updateModelDisplay();
+    });
+    
+    geminiModelSelect.addEventListener('change', () => {
+        updateModelDisplay();
+    });
+    
     function hideSettings() {
         isSettingsOpen = false;
         settingsPanel.classList.remove('active');
@@ -123,6 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedProvider = providerOpenAI.checked ? 'openai' : 'gemini';
         const openaiKey = openaiApiKeyInput.value.trim();
         const geminiKey = geminiApiKeyInput.value.trim();
+        const openaiModel = openaiModelSelect.value;
+        const geminiModel = geminiModelSelect.value;
         
         // Validate the selected provider's API key
         if (selectedProvider === 'openai') {
@@ -151,6 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
             aiProvider: selectedProvider,
             openaiApiKey: openaiKey,
             geminiApiKey: geminiKey,
+            openaiModel: openaiModel,
+            geminiModel: geminiModel,
             debugLogging: debugLogging
         }, () => {
             if (chrome.runtime.lastError) {

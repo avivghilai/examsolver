@@ -6,16 +6,18 @@
 class GeminiService {
     constructor() {
         this.apiKey = null;
-        this.model = 'gemini-1.5-flash'; // Using Gemini 1.5 Flash (fast and efficient)
+        this.model = 'gemini-2.0-flash-exp'; // Default to Gemini 2.5 Flash
     }
 
     /**
-     * Initialize the service by loading API key from storage
+     * Initialize the service by loading API key and model from storage
      */
     async initialize() {
         return new Promise((resolve) => {
-            chrome.storage.sync.get(['geminiApiKey'], (result) => {
+            chrome.storage.sync.get(['geminiApiKey', 'geminiModel'], (result) => {
                 this.apiKey = result.geminiApiKey || null;
+                // Default to Flash if not set
+                this.model = result.geminiModel || 'gemini-2.5-flash';
                 resolve(!!this.apiKey);
             });
         });
