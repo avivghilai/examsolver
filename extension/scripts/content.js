@@ -11,14 +11,10 @@
     // Immediate startup log to confirm script is loaded
     console.log('%c[Quiz Solver] Content script loaded and executing...', 
         'color: #2196F3; font-weight: bold; font-size: 14px;');
-    console.log('[Quiz Solver] Page URL:', window.location.href);
-    console.log('[Quiz Solver] Document ready state:', document.readyState);
 
     // Wait for page to be fully loaded (including dynamic content)
     function waitForContent(callback, maxAttempts = 50) {
         let attempts = 0;
-        
-        console.log('[Quiz Solver] Starting content detection wait loop...');
         
         const checkContent = () => {
             attempts++;
@@ -31,17 +27,7 @@
             const doceboElements = document.querySelectorAll('[dcbshquestioncontent], .dcb-course-lesson-questions-question-content, [id^="dcb-sh-question-"]');
             const hasDoceboQuestions = doceboElements.length > 0;
             
-            if (attempts % 5 === 0 || hasInputs || hasQuestionText || hasDoceboQuestions) {
-                console.log(`[Quiz Solver] Check attempt ${attempts}:`, {
-                    inputs: inputs.length,
-                    hasQuestionText: !!hasQuestionText,
-                    doceboElements: doceboElements.length,
-                    bodyTextLength: document.body.textContent.length
-                });
-            }
-            
             if (hasInputs || hasQuestionText || hasDoceboQuestions || attempts >= maxAttempts) {
-                console.log(`[Quiz Solver] Content check complete after ${attempts} attempts`);
                 callback();
             } else {
                 setTimeout(checkContent, 200);
@@ -54,69 +40,22 @@
 
     // Initialize question detector and log results
     function initQuestionDetector() {
-        console.log('[Quiz Solver] Initializing question detector...');
-        
         if (typeof QuestionDetector === 'undefined') {
             console.error('[Quiz Solver] ERROR: QuestionDetector class not found!');
-            console.error('[Quiz Solver] Available globals:', Object.keys(window).filter(k => k.includes('Question') || k.includes('quiz')));
             return;
         }
 
-        console.log('[Quiz Solver] QuestionDetector class found, creating instance...');
-
-        // Debug: Check for Docebo elements
-        const doceboElements = document.querySelectorAll('[dcbshquestioncontent], .dcb-course-lesson-questions-question-content, [id^="dcb-sh-question-"]');
-        console.log(`[Quiz Solver] Docebo elements found: ${doceboElements.length}`);
-        if (doceboElements.length > 0) {
-            console.log(`%c[Quiz Solver] Found ${doceboElements.length} Docebo question element(s)`, 'color: #FF9800; font-weight: bold;');
-            doceboElements.forEach((el, i) => {
-                console.log(`[Quiz Solver] Docebo element ${i + 1}:`, {
-                    id: el.id,
-                    classes: Array.from(el.classList),
-                    hasAttr: el.hasAttribute('dcbshquestioncontent'),
-                    textPreview: el.textContent.substring(0, 100)
-                });
-            });
-        }
-
         const detector = new QuestionDetector();
-        console.log('[Quiz Solver] Detector created, running detection strategies...');
         const questions = detector.detectQuestions();
-        console.log(`[Quiz Solver] Detection complete, found ${questions.length} question(s)`);
         
         if (questions.length === 0) {
             console.log('%c[Quiz Solver] No questions detected on this page', 'color: #f44336;');
-            console.log('[Quiz Solver] Debug info:', {
-                doceboElements: doceboElements.length,
-                inputs: document.querySelectorAll('input[type="checkbox"], input[type="radio"]').length,
-                questionText: document.body.textContent.match(/Question\s+\d+/i) ? 'Found' : 'Not found'
-            });
             return;
         }
 
         // Log summary
         console.log(`%c[Quiz Solver] Found ${questions.length} question(s)`, 
             'color: #4CAF50; font-weight: bold; font-size: 14px;');
-        
-        // Log each question with formatted output
-        questions.forEach((question, index) => {
-            const questionNum = question.questionNumber 
-                ? `Question ${question.questionNumber}${question.totalQuestions ? ` of ${question.totalQuestions}` : ''}`
-                : `Question ${index + 1}`;
-            
-            console.group(`%c${questionNum}`, 'color: #2196F3; font-weight: bold;');
-            console.log('%cQuestion:', 'color: #666; font-weight: bold;', question.questionText);
-            console.log('%cAnswers:', 'color: #666; font-weight: bold;');
-            
-            question.answers.forEach((answer, ansIndex) => {
-                const letter = String.fromCharCode(65 + ansIndex); // A, B, C, D...
-                const selected = answer.isSelected ? ' ✓' : '';
-                console.log(`  ${letter}. ${answer.text}${selected}`);
-            });
-            
-            console.log('%cElement:', 'color: #999; font-size: 11px;', question.element);
-            console.groupEnd();
-        });
 
         // Store questions globally for potential future use
         window.quizSolverQuestions = questions;
@@ -273,8 +212,6 @@
             // Show summary
             if (errorCount > 0) {
                 console.warn(`[Quiz Solver] Revealed ${successCount} questions successfully, ${errorCount} failed`);
-            } else {
-                console.log(`[Quiz Solver] Successfully revealed all ${successCount} questions`);
             }
             
         } catch (error) {
@@ -400,8 +337,6 @@
 
     // Highlight correct answers on the page
     function highlightCorrectAnswers(question, correctAnswerLetters, explanation) {
-        console.log(`[Quiz Solver] Highlighting answers:`, correctAnswerLetters);
-        
         question.answers.forEach((answer, index) => {
             const letter = String.fromCharCode(65 + index); // A, B, C, D...
             
@@ -483,14 +418,11 @@
             return null;
         }
 
-        console.log('[Quiz Solver] Starting MutationObserver for dynamic content...');
         const detector = new QuestionDetector();
         let lastQuestionCount = 0;
-        let checkCount = 0;
         
         const observer = new MutationObserver((mutations) => {
             let shouldCheck = false;
-            let detectedElements = [];
             
             mutations.forEach((mutation) => {
                 // Check if new nodes were added that might contain questions
@@ -506,21 +438,12 @@
                         
                         if (hasInputs || hasQuestionText || hasDoceboAttr || hasDoceboChildren) {
                             shouldCheck = true;
-                            detectedElements.push({
-                                tag: node.tagName,
-                                id: node.id,
-                                classes: Array.from(node.classList || []),
-                                hasDoceboAttr,
-                                hasInputs: !!hasInputs
-                            });
                         }
                     }
                 });
             });
             
             if (shouldCheck) {
-                checkCount++;
-                console.log(`[Quiz Solver] MutationObserver detected potential question content (check #${checkCount}):`, detectedElements);
                 // Debounce: wait a bit for content to settle
                 setTimeout(() => {
                     const questions = detector.detectQuestions();
@@ -541,8 +464,6 @@
                         }));
                         console.log(`%c[Quiz Solver] Updated: Now ${questions.length} question(s) detected`, 
                             'color: #4CAF50; font-weight: bold;');
-                    } else if (questions.length > 0) {
-                        console.log(`[Quiz Solver] Still ${questions.length} question(s) (no change)`);
                     }
                 }, 500);
             }
@@ -554,24 +475,18 @@
             subtree: true
         });
         
-        console.log('[Quiz Solver] MutationObserver started and observing document.body');
         return observer;
     }
 
     // Initialize when DOM is ready
-    console.log('[Quiz Solver] Setting up initialization...');
-    
     if (document.readyState === 'loading') {
-        console.log('[Quiz Solver] Document still loading, waiting for DOMContentLoaded...');
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[Quiz Solver] DOMContentLoaded fired');
             waitForContent(() => {
                 initQuestionDetector();
                 observeForQuestions();
             });
         });
     } else {
-        console.log('[Quiz Solver] Document already loaded, starting immediately...');
         waitForContent(() => {
             initQuestionDetector();
             observeForQuestions();
@@ -580,19 +495,13 @@
 
     // Export function to manually trigger detection (useful for extension popup)
     window.quizSolverDetectQuestions = function() {
-        console.log('[Quiz Solver] Manual detection triggered via quizSolverDetectQuestions()');
         if (typeof QuestionDetector === 'undefined') {
             console.error('[Quiz Solver] ERROR: QuestionDetector not loaded');
             return [];
         }
         const detector = new QuestionDetector();
         const questions = detector.detectQuestions();
-        console.log(`[Quiz Solver] Manual detection found ${questions.length} question(s)`);
         return questions;
     };
-
-    console.log('%c[Quiz Solver] Content script initialization complete!', 
-        'color: #4CAF50; font-weight: bold; font-size: 14px;');
-    console.log('[Quiz Solver] Script will now wait for page content and detect questions...');
 })();
 

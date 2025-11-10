@@ -203,7 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 // Content script might not be loaded yet, that's okay
-                console.log('Questions not yet detected');
             }
         }
     });

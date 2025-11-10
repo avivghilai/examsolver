@@ -49,33 +49,12 @@ class QuestionDetector {
         const questions = [];
         const processedContainers = new WeakSet();
         
-        console.log('[Quiz Solver] Docebo detection: Looking for question containers...');
-        
-        // First, let's see what's actually in the DOM
-        console.log('[Quiz Solver] DOM exploration:');
-        console.log('  - All elements with "dcb" in class:', document.querySelectorAll('[class*="dcb"]').length);
-        console.log('  - All elements with "question" in class:', document.querySelectorAll('[class*="question"]').length);
-        console.log('  - All elements with "dcbshquestioncontent" attribute:', document.querySelectorAll('[dcbshquestioncontent]').length);
-        console.log('  - All elements with class containing "dcb-course-lesson":', document.querySelectorAll('[class*="dcb-course-lesson"]').length);
-        
         // Look for Docebo question containers by ID pattern (most reliable)
         // Docebo uses IDs like: dcb-sh-question-50-content
         try {
             const idContainers = document.querySelectorAll('[id^="dcb-sh-question-"]');
-            console.log(`[Quiz Solver] Found ${idContainers.length} elements with dcb-sh-question- ID pattern`);
             
-            // Also try without the exact prefix match
-            const allDcbIds = Array.from(document.querySelectorAll('[id*="dcb"]')).filter(el => 
-                el.id.includes('question') || el.id.includes('quiz')
-            );
-            console.log(`[Quiz Solver] Found ${allDcbIds.length} elements with "dcb" and "question"/"quiz" in ID`);
-            if (allDcbIds.length > 0) {
-                allDcbIds.slice(0, 5).forEach((el, i) => {
-                    console.log(`  [${i + 1}] ID: ${el.id}, classes: ${Array.from(el.classList).join(', ')}`);
-                });
-            }
-            
-            idContainers.forEach((element, index) => {
+            idContainers.forEach((element) => {
                 // This should be the main question container
                 if (processedContainers.has(element)) return;
                 
@@ -83,34 +62,21 @@ class QuestionDetector {
                 const inputs = element.querySelectorAll('input[type="checkbox"], input[type="radio"]');
                 const hasAnswers = inputs.length >= 2;
                 
-                console.log(`[Quiz Solver] Container ${index + 1} (${element.id}):`, {
-                    hasQuestionText: !!hasQuestionText,
-                    inputCount: inputs.length,
-                    hasAnswers
-                });
-                
                 // Check if this container has multiple question divs (too large - contains multiple questions)
                 const questionDivs = element.querySelectorAll('[dcbshquestioncontent], .dcb-course-lesson-questions-question-content');
                 const hasMultipleQuestions = questionDivs.length > 1;
                 
                 if (hasMultipleQuestions) {
-                    console.log(`[Quiz Solver] Skipping container ${index + 1} - contains ${questionDivs.length} question divs (too large)`);
                     return;
                 }
                 
                 // Skip containers with too many answers (likely contains multiple questions' answers)
                 if (inputs.length > 10) {
-                    console.log(`[Quiz Solver] Skipping container ${index + 1} - too many answers (${inputs.length})`);
                     return;
                 }
                 
                 if (hasQuestionText && hasAnswers) {
                     const question = this.extractQuestionData(element);
-                    console.log(`[Quiz Solver] Extracted question from container ${index + 1}:`, {
-                        hasQuestion: !!question,
-                        questionText: question?.questionText?.substring(0, 50),
-                        answerCount: question?.answers?.length
-                    });
                     
                     if (question && question.answers.length >= 2 && question.questionText) {
                         // More strict validation
@@ -133,13 +99,6 @@ class QuestionDetector {
                         if (!isLikelyAnswer && !isAnswerList && !matchesMultipleAnswers) {
                             processedContainers.add(element);
                             questions.push(question);
-                            console.log(`[Quiz Solver] Added question from container ${index + 1}`);
-                        } else {
-                            console.log(`[Quiz Solver] Skipped container ${index + 1} - validation failed:`, {
-                                isLikelyAnswer,
-                                isAnswerList,
-                                matchesMultipleAnswers
-                            });
                         }
                     }
                 }
@@ -162,33 +121,18 @@ class QuestionDetector {
             selectors.forEach(selector => {
                 try {
                     const found = document.querySelectorAll(selector);
-                    console.log(`[Quiz Solver] Selector "${selector}" found ${found.length} elements`);
                     if (found.length > 0) {
                         contentDivs = Array.from(found);
                     }
                 } catch (e) {
-                    console.warn(`[Quiz Solver] Selector "${selector}" failed:`, e);
+                    // Invalid selector, skip
                 }
             });
             
             // Remove duplicates
             contentDivs = [...new Set(contentDivs)];
-            console.log(`[Quiz Solver] Total unique Docebo question content divs: ${contentDivs.length}`);
             
-            if (contentDivs.length > 0) {
-                contentDivs.slice(0, 3).forEach((el, i) => {
-                    console.log(`[Quiz Solver] Sample content div ${i + 1}:`, {
-                        id: el.id,
-                        classes: Array.from(el.classList),
-                        hasAttr: el.hasAttribute('dcbshquestioncontent'),
-                        textPreview: el.textContent.substring(0, 100),
-                        parentId: el.parentElement?.id,
-                        parentClasses: el.parentElement ? Array.from(el.parentElement.classList) : []
-                    });
-                });
-            }
-            
-            contentDivs.forEach((element, index) => {
+            contentDivs.forEach((element) => {
                 // Try multiple strategies to find the container, but be more precise
                 let container = element.closest('[id^="dcb-sh-question-"]');
                 
@@ -231,25 +175,13 @@ class QuestionDetector {
                     const questionDivs = container.querySelectorAll('[dcbshquestioncontent], .dcb-course-lesson-questions-question-content');
                     const hasMultipleQuestions = questionDivs.length > 1;
                     
-                    console.log(`[Quiz Solver] Content div ${index + 1} container:`, {
-                        containerId: container.id,
-                        containerTag: container.tagName,
-                        containerClasses: Array.from(container.classList),
-                        inputCount: inputs.length,
-                        hasAnswers,
-                        questionDivsCount: questionDivs.length,
-                        hasMultipleQuestions
-                    });
-                    
                     // Skip containers that have multiple questions (they're too large)
                     if (hasMultipleQuestions) {
-                        console.log(`[Quiz Solver] Skipping container ${index + 1} - contains multiple questions`);
                         return;
                     }
                     
                     // Skip containers with too many answers (likely contains multiple questions' answers)
                     if (inputs.length > 10) {
-                        console.log(`[Quiz Solver] Skipping container ${index + 1} - too many answers (${inputs.length})`);
                         return;
                     }
                     
@@ -276,13 +208,6 @@ class QuestionDetector {
                             if (!isLikelyAnswer && !isAnswerList && !matchesMultipleAnswers) {
                                 processedContainers.add(container);
                                 questions.push(question);
-                                console.log(`[Quiz Solver] Added question from content div ${index + 1}`);
-                            } else {
-                                console.log(`[Quiz Solver] Skipped content div ${index + 1} - validation failed:`, {
-                                    isLikelyAnswer,
-                                    isAnswerList,
-                                    matchesMultipleAnswers
-                                });
                             }
                         }
                     }
@@ -292,7 +217,6 @@ class QuestionDetector {
             console.warn('[Quiz Solver] Docebo content-based detection error:', e);
         }
 
-        console.log(`[Quiz Solver] Docebo detection found ${questions.length} question(s)`);
         return questions;
     }
 
@@ -548,15 +472,8 @@ class QuestionDetector {
         );
         
         if (isAnswerDuplicate) {
-            console.log('[Quiz Solver] Skipping - question text matches an answer:', questionText.substring(0, 50));
             return null;
         }
-        
-        // Log successful extraction for debugging
-        console.log('[Quiz Solver] Extracted question:', {
-            text: questionText.substring(0, 80),
-            answerCount: answers.length
-        });
 
         return {
             element: container,
@@ -806,13 +723,11 @@ class QuestionDetector {
             
             // Skip if the question text is actually just an answer option
             if (answerTexts.has(questionTextLower)) {
-                console.log('[Quiz Solver] Dedup: Skipping - question text is an answer:', questionTextLower.substring(0, 50));
                 return;
             }
             
             // Skip if question text is too short and doesn't look like a question (but be less strict)
             if (questionTextLower.length < 15 && !questionTextLower.includes('?') && !questionTextLower.match(/\b(what|which|how|why|when|where|who)\b/i)) {
-                console.log('[Quiz Solver] Dedup: Skipping - too short:', questionTextLower.substring(0, 50));
                 return;
             }
             
@@ -821,7 +736,6 @@ class QuestionDetector {
                 answer.text.toLowerCase().trim() === questionTextLower
             );
             if (matchesOwnAnswer) {
-                console.log('[Quiz Solver] Dedup: Skipping - matches own answer:', questionTextLower.substring(0, 50));
                 return;
             }
             
