@@ -15,9 +15,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.docebosaas.com/*",
-        "*://*/*quiz*",
-        "*://*/*question*"
+        "<all_urls>"
       ],
       "js": [
         "scripts/question-detector.js",

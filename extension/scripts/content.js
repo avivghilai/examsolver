@@ -8,9 +8,6 @@
 (function() {
     'use strict';
 
-    // Immediate startup log to confirm script is loaded
-    console.log('%c[Quiz Solver] Content script loaded and executing...', 
-        'color: #2196F3; font-weight: bold; font-size: 14px;');
 
     let isExtensionEnabled = false;
     let mutationObserver = null;
@@ -670,8 +667,8 @@
                     startExtension();
                 }
             } else {
-                console.log('%c[Quiz Solver] Extension is disabled. Enable it in the extension popup to use it.', 
-                    'color: #999; font-size: 12px;');
+                // Extension is disabled - exit early, no overhead
+                debugLog('Extension is disabled. Exiting content script.');
             }
         });
     });
