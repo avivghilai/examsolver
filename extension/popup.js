@@ -5,7 +5,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const detectBtn = document.getElementById('detectBtn');
     const statusDiv = document.getElementById('status');
-    const questionsList = document.getElementById('questionsList');
     const settingsLink = document.getElementById('settingsLink');
     const settingsPanel = document.getElementById('settingsPanel');
     const mainView = document.getElementById('mainView');
@@ -335,29 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function displayQuestions(questions) {
-        if (questions.length === 0) {
-            questionsList.innerHTML = '<p style="color: #666; font-size: 12px;">No questions detected on this page.</p>';
-            return;
-        }
-
-        questionsList.innerHTML = questions.map((q, index) => {
-            const questionNum = q.questionNumber 
-                ? `Question ${q.questionNumber}${q.totalQuestions ? ` of ${q.totalQuestions}` : ''}`
-                : `Question ${index + 1}`;
-            
-            const answersHtml = q.answers.map((a, i) => {
-                const letter = String.fromCharCode(65 + i);
-                return `<div>${letter}. ${a.text}</div>`;
-            }).join('');
-
-            return `
-                <div class="question-item">
-                    <strong>${questionNum}</strong>
-                    <div style="margin-bottom: 8px;">${q.questionText}</div>
-                    <div class="answers">${answersHtml}</div>
-                </div>
-            `;
-        }).join('');
+        // Questions are now handled on the page itself, not displayed in popup
+        // This function is kept for compatibility but does nothing
     }
 
     detectBtn.addEventListener('click', async () => {
@@ -393,11 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const questions = results[0]?.result || [];
             
             if (questions.length > 0) {
-                setStatus(`Found ${questions.length} question(s)`, 'success');
+                setStatus(`Found ${questions.length} question(s) on the page. Use the "Reveal Answer" buttons on the page to get answers.`, 'success');
                 displayQuestions(questions);
             } else {
                 setStatus('No questions detected. Make sure you are on a quiz page.', 'error');
-                questionsList.innerHTML = '';
             }
         } catch (error) {
             console.error('Error detecting questions:', error);
@@ -428,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         const questions = results[0]?.result || [];
                         if (questions.length > 0) {
-                            setStatus(`Found ${questions.length} question(s)`, 'success');
+                            setStatus(`Found ${questions.length} question(s) on the page. Use the "Reveal Answer" buttons on the page to get answers.`, 'success');
                             displayQuestions(questions);
                         }
                     } catch (error) {
