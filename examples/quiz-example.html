@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Quiz - Quiz Solver Extension Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .quiz-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .quiz-info {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .question-container {
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .question-header {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            color: #444;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+        
+        .answers {
+            margin-left: 20px;
+        }
+        
+        .answer-option {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .answer-option input[type="radio"],
+        .answer-option input[type="checkbox"] {
+            margin-right: 12px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+        
+        .answer-option label {
+            cursor: pointer;
+            font-size: 15px;
+            color: #555;
+            flex: 1;
+        }
+        
+        .answer-option:hover label {
+            color: #2196F3;
+        }
+        
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .note {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1>Sample Quiz</h1>
+            <div class="quiz-info">
+                <p>This is a test quiz page for the Quiz Solver extension.</p>
+                <p>Question 1 of 5 (required)</p>
+            </div>
+        </div>
+        
+        <div class="note">
+            <strong>Note:</strong> This is a test page. Enable the Quiz Solver extension and click "Detect Questions" to test the extension functionality.
+        </div>
+        
+        <!-- Question 1: Single Choice -->
+        <div class="question-container" id="question-1">
+            <div class="question-header">Question 1 of 5</div>
+            <div class="question-text">
+                What is the capital city of France?
+            </div>
+            <div class="answers">
+                <div class="answer-option">
+                    <input type="radio" id="q1-a" name="question1" value="A">
+                    <label for="q1-a">London</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q1-b" name="question1" value="B">
+                    <label for="q1-b">Berlin</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q1-c" name="question1" value="C">
+                    <label for="q1-c">Paris</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q1-d" name="question1" value="D">
+                    <label for="q1-d">Madrid</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Question 2: Multiple Choice -->
+        <div class="question-container" id="question-2">
+            <div class="question-header">Question 2 of 5</div>
+            <div class="question-text">
+                Which of the following are programming languages? (Select all that apply)
+            </div>
+            <div class="answers">
+                <div class="answer-option">
+                    <input type="checkbox" id="q2-a" name="question2" value="A">
+                    <label for="q2-a">Python</label>
+                </div>
+                <div class="answer-option">
+                    <input type="checkbox" id="q2-b" name="question2" value="B">
+                    <label for="q2-b">HTML</label>
+                </div>
+                <div class="answer-option">
+                    <input type="checkbox" id="q2-c" name="question2" value="C">
+                    <label for="q2-c">JavaScript</label>
+                </div>
+                <div class="answer-option">
+                    <input type="checkbox" id="q2-d" name="question2" value="D">
+                    <label for="q2-d">CSS</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Question 3: Single Choice -->
+        <div class="question-container" id="question-3">
+            <div class="question-header">Question 3 of 5</div>
+            <div class="question-text">
+                What does CPU stand for?
+            </div>
+            <div class="answers">
+                <div class="answer-option">
+                    <input type="radio" id="q3-a" name="question3" value="A">
+                    <label for="q3-a">Central Processing Unit</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q3-b" name="question3" value="B">
+                    <label for="q3-b">Computer Personal Unit</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q3-c" name="question3" value="C">
+                    <label for="q3-c">Central Program Utility</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q3-d" name="question3" value="D">
+                    <label for="q3-d">Computer Processing Utility</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Question 4: Single Choice -->
+        <div class="question-container" id="question-4">
+            <div class="question-header">Question 4 of 5</div>
+            <div class="question-text">
+                Which HTTP status code indicates a successful request?
+            </div>
+            <div class="answers">
+                <div class="answer-option">
+                    <input type="radio" id="q4-a" name="question4" value="A">
+                    <label for="q4-a">200</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q4-b" name="question4" value="B">
+                    <label for="q4-b">404</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q4-c" name="question4" value="C">
+                    <label for="q4-c">500</label>
+                </div>
+                <div class="answer-option">
+                    <input type="radio" id="q4-d" name="question4" value="D">
+                    <label for="q4-d">301</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Question 5: Multiple Choice -->
+        <div class="question-container" id="question-5">
+            <div class="question-header">Question 5 of 5</div>
+            <div class="question-text">
+                What are the primary colors in the RGB color model?
+            </div>
+            <div class="answers">
+                <div class="answer-option">
+                    <input type="checkbox" id="q5-a" name="question5" value="A">
+                    <label for="q5-a">Red</label>
+                </div>
+                <div class="answer-option">
+                    <input type="checkbox" id="q5-b" name="question5" value="B">
+                    <label for="q5-b">Green</label>
+                </div>
+                <div class="answer-option">
+                    <input type="checkbox" id="q5-c" name="question5" value="C">
+                    <label for="q5-c">Blue</label>
+                </div>
+                <div class="answer-option">
+                    <input type="checkbox" id="q5-d" name="question5" value="D">
+                    <label for="q5-d">Yellow</label>
+                </div>
+            </div>
+        </div>
+        
+        <button class="submit-btn" onclick="alert('This is a test page. Use the Quiz Solver extension to reveal answers!')">
+            Submit Quiz
+        </button>
+    </div>
+</body>
+</html>
+

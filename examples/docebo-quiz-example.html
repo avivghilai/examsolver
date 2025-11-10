@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docebo-Style Quiz - Quiz Solver Extension Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .dcb-course-lesson {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .dcb-course-lesson-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .dcb-course-lesson-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .dcb-course-lesson-questions {
+            margin-top: 20px;
+        }
+        
+        [id^="dcb-sh-question-"] {
+            margin-bottom: 40px;
+            padding: 25px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .dcb-course-lesson-questions-question-content {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+        
+        .dcb-course-lesson-questions-answer {
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .dcb-course-lesson-questions-answer:hover {
+            border-color: #2196F3;
+            background-color: #f5f5f5;
+        }
+        
+        .dcb-course-lesson-questions-answer input[type="radio"],
+        .dcb-course-lesson-questions-answer input[type="checkbox"] {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .dcb-course-lesson-questions-answer label {
+            cursor: pointer;
+            font-size: 15px;
+            color: #555;
+            flex: 1;
+        }
+        
+        .note {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="dcb-course-lesson">
+        <div class="dcb-course-lesson-header">
+            <h1 class="dcb-course-lesson-title">Docebo-Style Quiz Test</h1>
+            <p>This page mimics Docebo quiz structure for testing the Quiz Solver extension.</p>
+        </div>
+        
+        <div class="note">
+            <strong>Note:</strong> This page uses Docebo-style HTML structure. Enable the Quiz Solver extension and it should automatically detect questions on this page.
+        </div>
+        
+        <div class="dcb-course-lesson-questions">
+            <!-- Question 1 -->
+            <div id="dcb-sh-question-1-content" class="dcb-course-lesson-questions-question">
+                <div dcbshquestioncontent="" class="dcb-course-lesson-questions-question-content">
+                    Question 1 of 3: What is the primary purpose of version control systems like Git?
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q1-opt1" name="q1" value="A">
+                    <label for="q1-opt1">To track changes in code and collaborate with other developers</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q1-opt2" name="q1" value="B">
+                    <label for="q1-opt2">To compile code into executable programs</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q1-opt3" name="q1" value="C">
+                    <label for="q1-opt3">To design user interfaces</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q1-opt4" name="q1" value="D">
+                    <label for="q1-opt4">To manage database connections</label>
+                </div>
+            </div>
+            
+            <!-- Question 2 -->
+            <div id="dcb-sh-question-2-content" class="dcb-course-lesson-questions-question">
+                <div dcbshquestioncontent="" class="dcb-course-lesson-questions-question-content">
+                    Question 2 of 3: Which of the following are benefits of using RESTful APIs? (Select all that apply)
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="checkbox" id="q2-opt1" name="q2" value="A">
+                    <label for="q2-opt1">Stateless communication</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="checkbox" id="q2-opt2" name="q2" value="B">
+                    <label for="q2-opt2">Platform independence</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="checkbox" id="q2-opt3" name="q2" value="C">
+                    <label for="q2-opt3">Requires constant connection</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="checkbox" id="q2-opt4" name="q2" value="D">
+                    <label for="q2-opt4">Scalability</label>
+                </div>
+            </div>
+            
+            <!-- Question 3 -->
+            <div id="dcb-sh-question-3-content" class="dcb-course-lesson-questions-question">
+                <div dcbshquestioncontent="" class="dcb-course-lesson-questions-question-content">
+                    Question 3 of 3: What does the acronym "API" stand for?
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q3-opt1" name="q3" value="A">
+                    <label for="q3-opt1">Application Programming Interface</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q3-opt2" name="q3" value="B">
+                    <label for="q3-opt2">Automated Program Integration</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q3-opt3" name="q3" value="C">
+                    <label for="q3-opt3">Advanced Protocol Interface</label>
+                </div>
+                <div class="dcb-course-lesson-questions-answer">
+                    <input type="radio" id="q3-opt4" name="q3" value="D">
+                    <label for="q3-opt4">Application Process Integration</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
