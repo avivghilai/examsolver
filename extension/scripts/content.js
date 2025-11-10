@@ -13,6 +13,31 @@
     let mutationObserver = null;
     let debugLoggingEnabled = false;
 
+    // Get the appropriate AI service based on user's provider selection
+    function getAIService() {
+        return new Promise((resolve) => {
+            chrome.storage.sync.get(['aiProvider'], (result) => {
+                const provider = result.aiProvider || 'openai';
+                
+                if (provider === 'gemini') {
+                    if (typeof GeminiService === 'undefined') {
+                        resolve(null);
+                        return;
+                    }
+                    const service = new GeminiService();
+                    service.initialize().then(() => resolve(service));
+                } else {
+                    if (typeof OpenAIService === 'undefined') {
+                        resolve(null);
+                        return;
+                    }
+                    const service = new OpenAIService();
+                    service.initialize().then(() => resolve(service));
+                }
+            });
+        });
+    }
+
     // Debug logging utility
     function debugLog(...args) {
         if (debugLoggingEnabled) {
@@ -208,8 +233,9 @@
     // Add "Reveal All" button at the top of the quiz
     function addRevealAllButton(questions) {
         if (questions.length === 0) return;
-        if (typeof OpenAIService === 'undefined') {
-            console.warn('[Quiz Solver] OpenAIService not available, skipping Reveal All button');
+        // Check if either service is available
+        if (typeof OpenAIService === 'undefined' && typeof GeminiService === 'undefined') {
+            console.warn('[Quiz Solver] AI service not available, skipping Reveal All button');
             return;
         }
 
@@ -285,17 +311,18 @@
 
     // Handle Reveal All button click
     async function handleRevealAllClick(button, questions) {
-        if (typeof OpenAIService === 'undefined') {
-            alert('OpenAI service not available');
+        const aiService = await getAIService();
+        if (!aiService) {
+            alert('AI service not available. Please check your settings.');
             return;
         }
-
-        const openAIService = new OpenAIService();
         
-        // Initialize OpenAI service
-        const hasKey = await openAIService.initialize();
-        if (!hasKey) {
-            alert('OpenAI API key not configured. Please set it in extension settings.\n\nClick the extension icon and go to Settings.');
+        if (!aiService.hasApiKey()) {
+            chrome.storage.sync.get(['aiProvider'], (result) => {
+                const provider = result.aiProvider || 'openai';
+                const providerName = provider === 'openai' ? 'OpenAI' : 'Gemini';
+                alert(`${providerName} API key not configured. Please set it in extension settings.\n\nClick the extension icon and go to Settings.`);
+            });
             return;
         }
         
@@ -316,7 +343,7 @@
                 button.textContent = `Revealing ${i + 1}/${questions.length}...`;
                 
                 try {
-                    const result = await openAIService.getAnswer(question);
+                    const result = await aiService.getAnswer(question);
                     highlightCorrectAnswers(question, result.correctAnswers, result.explanation);
                     successCount++;
                     
@@ -357,13 +384,12 @@
     }
 
     // Add Reveal buttons to detected questions
-    function addRevealButtons(questions) {
-        if (typeof OpenAIService === 'undefined') {
-            console.warn('[Quiz Solver] OpenAIService not available, skipping Reveal buttons');
+    async function addRevealButtons(questions) {
+        // Check if either service is available
+        if (typeof OpenAIService === 'undefined' && typeof GeminiService === 'undefined') {
+            console.warn('[Quiz Solver] AI service not available, skipping Reveal buttons');
             return;
         }
-
-        const openAIService = new OpenAIService();
         
         questions.forEach((question, index) => {
             // Check if button already exists for this question
@@ -375,17 +401,17 @@
             if (!questionTextElement) {
                 // Fallback: try to find any text element or use the container
                 const fallbackElement = question.element.querySelector('h1, h2, h3, h4, h5, h6, p, div') || question.element;
-                insertRevealButton(fallbackElement, question, openAIService);
+                insertRevealButton(fallbackElement, question);
                 return;
             }
             
             // Insert button after question text element
-            insertRevealButton(questionTextElement, question, openAIService);
+            insertRevealButton(questionTextElement, question);
         });
     }
 
     // Helper function to insert Reveal button
-    function insertRevealButton(insertAfterElement, question, openAIService) {
+    function insertRevealButton(insertAfterElement, question) {
         // Check if button already exists
         if (insertAfterElement.parentElement.querySelector('.quiz-solver-reveal-btn')) return;
         
@@ -421,7 +447,7 @@
         
         // Add click handler
         button.addEventListener('click', async () => {
-            await handleRevealClick(button, question, openAIService);
+            await handleRevealClick(button, question);
         });
         
         // Insert button after the element
@@ -433,13 +459,19 @@
     }
 
     // Handle Reveal button click
-    async function handleRevealClick(button, question, openAIService) {
-        // Initialize OpenAI service
-        const hasKey = await openAIService.initialize();
-        if (!hasKey) {
-            // Open popup to show settings
-            alert('OpenAI API key not configured. Please set it in extension settings.\n\nClick the extension icon and go to Settings.');
-            // Try to open the popup programmatically (user will need to click icon)
+    async function handleRevealClick(button, question) {
+        const aiService = await getAIService();
+        if (!aiService) {
+            alert('AI service not available. Please check your settings.');
+            return;
+        }
+        
+        if (!aiService.hasApiKey()) {
+            chrome.storage.sync.get(['aiProvider'], (result) => {
+                const provider = result.aiProvider || 'openai';
+                const providerName = provider === 'openai' ? 'OpenAI' : 'Gemini';
+                alert(`${providerName} API key not configured. Please set it in extension settings.\n\nClick the extension icon and go to Settings.`);
+            });
             chrome.runtime.sendMessage({ action: 'openSettings' });
             return;
         }
@@ -450,7 +482,7 @@
         button.style.opacity = '0.6';
         
         try {
-            const result = await openAIService.getAnswer(question);
+            const result = await aiService.getAnswer(question);
             highlightCorrectAnswers(question, result.correctAnswers, result.explanation);
             
             // Update button

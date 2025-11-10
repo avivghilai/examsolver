@@ -10,7 +10,8 @@
   ],
   "host_permissions": [
     "*://*.docebosaas.com/*",
-    "https://api.openai.com/*"
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*"
   ],
   "content_scripts": [
     {
@@ -20,6 +21,7 @@
       "js": [
         "scripts/question-detector.js",
         "scripts/openai-service.js",
+        "scripts/gemini-service.js",
         "scripts/content.js"
       ],
       "run_at": "document_idle",

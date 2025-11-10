@@ -12,14 +12,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettings = document.getElementById('closeSettings');
     const cancelSettings = document.getElementById('cancelSettings');
     const settingsForm = document.getElementById('settingsForm');
-    const apiKeyInput = document.getElementById('apiKey');
-    const togglePassword = document.getElementById('togglePassword');
+    const openaiApiKeyInput = document.getElementById('openaiApiKey');
+    const geminiApiKeyInput = document.getElementById('geminiApiKey');
+    const toggleOpenAIPassword = document.getElementById('toggleOpenAIPassword');
+    const toggleGeminiPassword = document.getElementById('toggleGeminiPassword');
+    const providerOpenAI = document.getElementById('providerOpenAI');
+    const providerGemini = document.getElementById('providerGemini');
+    const providerOpenAILabel = document.getElementById('providerOpenAILabel');
+    const providerGeminiLabel = document.getElementById('providerGeminiLabel');
+    const openaiKeyGroup = document.getElementById('openaiKeyGroup');
+    const geminiKeyGroup = document.getElementById('geminiKeyGroup');
     const settingsStatus = document.getElementById('settingsStatus');
     const enableToggle = document.getElementById('enableToggle');
     const toggleStatus = document.getElementById('toggleStatus');
     const debugLoggingToggle = document.getElementById('debugLoggingToggle');
     
-    let isPasswordVisible = false;
+    let isOpenAIPasswordVisible = false;
+    let isGeminiPasswordVisible = false;
     let isSettingsOpen = false;
     
     function setStatus(message, type = 'info') {
@@ -33,13 +42,66 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsPanel.classList.add('active');
         
         // Load current settings
-        chrome.storage.sync.get(['openaiApiKey', 'debugLogging'], (result) => {
+        chrome.storage.sync.get(['aiProvider', 'openaiApiKey', 'geminiApiKey', 'debugLogging'], (result) => {
+            const provider = result.aiProvider || 'openai';
+            updateProviderUI(provider);
+            
             if (result.openaiApiKey) {
-                apiKeyInput.value = result.openaiApiKey;
+                openaiApiKeyInput.value = result.openaiApiKey;
+            }
+            if (result.geminiApiKey) {
+                geminiApiKeyInput.value = result.geminiApiKey;
             }
             debugLoggingToggle.checked = result.debugLogging === true;
         });
     }
+    
+    function updateProviderUI(provider) {
+        // Update radio button states
+        providerOpenAI.checked = provider === 'openai';
+        providerGemini.checked = provider === 'gemini';
+        
+        // Update visual active states
+        if (provider === 'openai') {
+            providerOpenAILabel.classList.add('active');
+            providerGeminiLabel.classList.remove('active');
+            openaiKeyGroup.style.display = 'block';
+            geminiKeyGroup.style.display = 'none';
+        } else {
+            providerOpenAILabel.classList.remove('active');
+            providerGeminiLabel.classList.add('active');
+            openaiKeyGroup.style.display = 'none';
+            geminiKeyGroup.style.display = 'block';
+        }
+    }
+    
+    // Handle provider selection change
+    providerOpenAI.addEventListener('change', () => {
+        if (providerOpenAI.checked) {
+            updateProviderUI('openai');
+        }
+    });
+    
+    providerGemini.addEventListener('change', () => {
+        if (providerGemini.checked) {
+            updateProviderUI('gemini');
+        }
+    });
+    
+    // Also handle clicks on labels for better UX
+    providerOpenAILabel.addEventListener('click', (e) => {
+        if (e.target !== providerOpenAI) {
+            providerOpenAI.checked = true;
+            providerOpenAI.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    providerGeminiLabel.addEventListener('click', (e) => {
+        if (e.target !== providerGemini) {
+            providerGemini.checked = true;
+            providerGemini.dispatchEvent(new Event('change'));
+        }
+    });
     
     function hideSettings() {
         isSettingsOpen = false;
@@ -58,22 +120,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function saveSettings() {
-        const apiKey = apiKeyInput.value.trim();
+        const selectedProvider = providerOpenAI.checked ? 'openai' : 'gemini';
+        const openaiKey = openaiApiKeyInput.value.trim();
+        const geminiKey = geminiApiKeyInput.value.trim();
         
-        if (!apiKey) {
-            showSettingsStatus('Please enter an API key', 'error');
-            return;
-        }
-
-        if (!apiKey.startsWith('sk-')) {
-            showSettingsStatus('API key should start with "sk-"', 'error');
-            return;
+        // Validate the selected provider's API key
+        if (selectedProvider === 'openai') {
+            if (!openaiKey) {
+                showSettingsStatus('Please enter an OpenAI API key', 'error');
+                return;
+            }
+            if (!openaiKey.startsWith('sk-')) {
+                showSettingsStatus('OpenAI API key should start with "sk-"', 'error');
+                return;
+            }
+        } else {
+            if (!geminiKey) {
+                showSettingsStatus('Please enter a Gemini API key', 'error');
+                return;
+            }
+            if (!geminiKey.startsWith('AIza')) {
+                showSettingsStatus('Gemini API key should start with "AIza"', 'error');
+                return;
+            }
         }
 
         const debugLogging = debugLoggingToggle.checked;
 
         chrome.storage.sync.set({ 
-            openaiApiKey: apiKey,
+            aiProvider: selectedProvider,
+            openaiApiKey: openaiKey,
+            geminiApiKey: geminiKey,
             debugLogging: debugLogging
         }, () => {
             if (chrome.runtime.lastError) {
@@ -100,11 +177,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function checkApiKey() {
-        chrome.storage.sync.get(['openaiApiKey'], (result) => {
-            if (!result.openaiApiKey) {
+        chrome.storage.sync.get(['aiProvider', 'openaiApiKey', 'geminiApiKey'], (result) => {
+            const provider = result.aiProvider || 'openai';
+            const hasKey = provider === 'openai' 
+                ? !!result.openaiApiKey 
+                : !!result.geminiApiKey;
+            
+            if (!hasKey) {
                 // No API key - show settings automatically
                 showSettings();
-                setStatus('⚠️ OpenAI API key required to reveal answers', 'warning');
+                const providerName = provider === 'openai' ? 'OpenAI' : 'Gemini';
+                setStatus(`⚠️ ${providerName} API key required to reveal answers`, 'warning');
             }
         });
     }
@@ -185,10 +268,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Toggle password visibility
-    togglePassword.addEventListener('click', () => {
-        isPasswordVisible = !isPasswordVisible;
-        apiKeyInput.type = isPasswordVisible ? 'text' : 'password';
-        togglePassword.textContent = isPasswordVisible ? 'Hide API Key' : 'Show API Key';
+    toggleOpenAIPassword.addEventListener('click', () => {
+        isOpenAIPasswordVisible = !isOpenAIPasswordVisible;
+        openaiApiKeyInput.type = isOpenAIPasswordVisible ? 'text' : 'password';
+        toggleOpenAIPassword.textContent = isOpenAIPasswordVisible ? 'Hide API Key' : 'Show API Key';
+    });
+    
+    toggleGeminiPassword.addEventListener('click', () => {
+        isGeminiPasswordVisible = !isGeminiPasswordVisible;
+        geminiApiKeyInput.type = isGeminiPasswordVisible ? 'text' : 'password';
+        toggleGeminiPassword.textContent = isGeminiPasswordVisible ? 'Hide API Key' : 'Show API Key';
     });
     
     // Save settings
