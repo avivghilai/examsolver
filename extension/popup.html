@@ -189,6 +189,74 @@
         .settings-link:hover {
             text-decoration: underline;
         }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: #f5f5f5;
+            border-radius: 6px;
+        }
+        .toggle-label {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        .toggle-switch input:disabled + .toggle-slider {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .toggle-status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .toggle-status.enabled {
+            color: #4CAF50;
+        }
+        .toggle-status.disabled {
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -196,6 +264,16 @@
         <div class="header-actions">
             <h1>Quiz Solver</h1>
             <a href="#" id="settingsLink" class="settings-link">⚙️ Settings</a>
+        </div>
+        <div class="toggle-container">
+            <div>
+                <div class="toggle-label">Enable Extension</div>
+                <div id="toggleStatus" class="toggle-status disabled">Extension is disabled</div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="enableToggle">
+                <span class="toggle-slider"></span>
+            </label>
         </div>
         <div id="status" class="status info">
             Click "Detect Questions" to scan the current page
@@ -217,6 +295,20 @@
                 <div class="help-text">
                     Your API key is stored locally and never sent to any server except OpenAI.
                     <a href="https://platform.openai.com/api-keys" target="_blank">Get your API key here</a>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="toggle-container" style="margin: 0; padding: 10px 0; background: none;">
+                    <div>
+                        <div class="toggle-label">Enable Debug Logging</div>
+                        <div class="help-text" style="margin-top: 5px;">
+                            Enable console logging for debugging question detection issues
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="debugLoggingToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
                 </div>
             </div>
             <div class="settings-footer">

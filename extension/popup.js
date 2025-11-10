@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKeyInput = document.getElementById('apiKey');
     const togglePassword = document.getElementById('togglePassword');
     const settingsStatus = document.getElementById('settingsStatus');
+    const enableToggle = document.getElementById('enableToggle');
+    const toggleStatus = document.getElementById('toggleStatus');
+    const debugLoggingToggle = document.getElementById('debugLoggingToggle');
     
     let isPasswordVisible = false;
     let isSettingsOpen = false;
@@ -29,11 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
         mainView.style.display = 'none';
         settingsPanel.classList.add('active');
         
-        // Load current API key
-        chrome.storage.sync.get(['openaiApiKey'], (result) => {
+        // Load current settings
+        chrome.storage.sync.get(['openaiApiKey', 'debugLogging'], (result) => {
             if (result.openaiApiKey) {
                 apiKeyInput.value = result.openaiApiKey;
             }
+            debugLoggingToggle.checked = result.debugLogging === true;
         });
     }
     
@@ -66,11 +70,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        chrome.storage.sync.set({ openaiApiKey: apiKey }, () => {
+        const debugLogging = debugLoggingToggle.checked;
+
+        chrome.storage.sync.set({ 
+            openaiApiKey: apiKey,
+            debugLogging: debugLogging
+        }, () => {
             if (chrome.runtime.lastError) {
                 showSettingsStatus('Error saving settings: ' + chrome.runtime.lastError.message, 'error');
             } else {
                 showSettingsStatus('Settings saved successfully!', 'success');
+                // Notify content scripts of debug logging change
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs[0]) {
+                        chrome.tabs.sendMessage(tabs[0].id, { 
+                            action: 'debugLoggingChanged', 
+                            enabled: debugLogging 
+                        }).catch(() => {
+                            // Content script might not be loaded yet, that's okay
+                        });
+                    }
+                });
                 setTimeout(() => {
                     hideSettings();
                     checkApiKey();
@@ -89,8 +109,66 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Load and update extension enabled state
+    function loadExtensionState() {
+        chrome.storage.sync.get(['extensionEnabled'], (result) => {
+            // Default to disabled if not set
+            const isEnabled = result.extensionEnabled !== undefined ? result.extensionEnabled : false;
+            enableToggle.checked = isEnabled;
+            updateToggleUI(isEnabled);
+        });
+    }
+    
+    function updateToggleUI(isEnabled) {
+        if (isEnabled) {
+            toggleStatus.textContent = 'Extension is enabled';
+            toggleStatus.className = 'toggle-status enabled';
+            detectBtn.disabled = false;
+            if (!isSettingsOpen) {
+                setStatus('Click "Detect Questions" to scan the current page', 'info');
+            }
+        } else {
+            toggleStatus.textContent = 'Extension is disabled';
+            toggleStatus.className = 'toggle-status disabled';
+            detectBtn.disabled = true;
+            if (!isSettingsOpen) {
+                setStatus('Extension is disabled. Enable it to detect questions.', 'info');
+            }
+        }
+    }
+    
+    function saveExtensionState(isEnabled) {
+        chrome.storage.sync.set({ extensionEnabled: isEnabled }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('Error saving extension state:', chrome.runtime.lastError);
+            } else {
+                updateToggleUI(isEnabled);
+                // Notify content scripts of state change
+                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs[0]) {
+                        chrome.tabs.sendMessage(tabs[0].id, { 
+                            action: 'extensionStateChanged', 
+                            enabled: isEnabled 
+                        }).catch(() => {
+                            // Content script might not be loaded yet, that's okay
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    // Toggle extension enabled/disabled
+    enableToggle.addEventListener('change', (e) => {
+        const isEnabled = e.target.checked;
+        saveExtensionState(isEnabled);
+    });
+    
     // Check for API key on load
     checkApiKey();
+    
+    // Load extension state on popup open
+    loadExtensionState();
     
     // Toggle settings panel
     settingsLink.addEventListener('click', (e) => {
@@ -146,6 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     detectBtn.addEventListener('click', async () => {
+        // Check if extension is enabled
+        const isEnabled = enableToggle.checked;
+        if (!isEnabled) {
+            setStatus('Extension is disabled. Enable it using the toggle above.', 'warning');
+            return;
+        }
+
         detectBtn.disabled = true;
         setStatus('Detecting questions...', 'info');
 
@@ -189,20 +274,32 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         if (tabs[0]) {
             try {
-                const results = await chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    function: () => {
-                        return window.quizSolverQuestions || [];
+                // Check if extension is enabled first
+                chrome.storage.sync.get(['extensionEnabled'], async (result) => {
+                    const isEnabled = result.extensionEnabled !== undefined ? result.extensionEnabled : false;
+                    if (!isEnabled) {
+                        return; // Don't try to get questions if extension is disabled
+                    }
+                    
+                    try {
+                        const results = await chrome.scripting.executeScript({
+                            target: { tabId: tabs[0].id },
+                            function: () => {
+                                return window.quizSolverQuestions || [];
+                            }
+                        });
+                        
+                        const questions = results[0]?.result || [];
+                        if (questions.length > 0) {
+                            setStatus(`Found ${questions.length} question(s)`, 'success');
+                            displayQuestions(questions);
+                        }
+                    } catch (error) {
+                        // Content script might not be loaded yet, that's okay
                     }
                 });
-                
-                const questions = results[0]?.result || [];
-                if (questions.length > 0) {
-                    setStatus(`Found ${questions.length} question(s)`, 'success');
-                    displayQuestions(questions);
-                }
             } catch (error) {
-                // Content script might not be loaded yet, that's okay
+                // Error querying tabs, that's okay
             }
         }
     });
